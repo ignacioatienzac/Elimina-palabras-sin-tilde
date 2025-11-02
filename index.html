@@ -84,7 +84,7 @@
     <div class="container">
         <h1>Eliminador de Palabras con Tilde o Diéresis</h1>
         <p>Sube un archivo <code>.txt</code>. El sistema leerá el contenido, eliminará todas las palabras que contengan tilde (á, é, í, ó, ú) o diéresis (ü) y te mostrará el resultado. <strong>Las palabras con "ñ" no se eliminarán.</strong></p>
-        <p><strong>Nota:</strong> Asegúrate de que tu archivo <code>.txt</code> esté guardado con codificación <strong>UTF-8</strong> para que lea las tildes correctamente.</p>
+        <p><strong>Importante:</strong> Asegúrate de que tu archivo <code>.txt</code> esté guardado con codificación <strong>UTF-8</strong> para que lea las tildes correctamente.</p>
 
         <input type="file" id="fileInput" accept=".txt">
 
@@ -116,20 +116,27 @@
                 const content = e.target.result;
                 
                 // --- La Lógica Principal ---
-                // Esta expresión regular (regex) busca palabras que contengan
-                // al menos un carácter con tilde o diéresis.
                 
+                // 1. Regex corregido:
+                // \b -> Límite de palabra (Unicode-aware con el flag 'u')
+                // \w* -> 0+ caracteres de palabra (Unicode, incluye [a-zA-Z0-9_] y ñ)
+                // [áéíóúüÁÉÍÓÚÜ] -> 1 carácter "activador" (tilde o diéresis, SIN ñ)
+                // \w* -> 0+ caracteres de palabra (Unicode, incluye [a-zA-Z0-9_] y ñ)
                 // \b -> Límite de palabra
-                // [a-zA-ZñÑáéíóúüÁÉÍÓÚÜ]* -> 0+ caracteres de palabra (letras, ñ, o acentos)
-                // [áéíóúüÁÉÍÓÚÜ]        -> 1 carácter "activador" (tilde o diéresis, SIN ñ)
-                // [a-zA-ZñÑáéíóúüÁÉÍÓÚÜ]* -> 0+ caracteres de palabra (letras, ñ, o acentos)
-                // \b -> Límite de palabra
-                //
-                // Flags: 'g' (global) y 'u' (unicode, para que \b trate las tildes como letras)
-                const regex = /\b[a-zA-ZñÑáéíóúüÁÉÍÓÚÜ]*[áéíóúüÁÉÍÓÚÜ][a-zA-ZñÑáéíóúüÁÉÍÓÚÜ]*\b/gu;
+                const regex = /\b\w*[\áéíóúüÁÉÍÓÚÜ]\w*\b/gu;
 
-                // Reemplazamos las palabras encontradas por una cadena vacía
-                processedContent = content.replace(regex, "");
+                // 2. Lógica de preservación de saltos de línea
+                // Dividimos el contenido por saltos de línea
+                const lines = content.split('\n');
+                
+                // Procesamos cada línea individualmente
+                const processedLines = lines.map(line => {
+                    // Reemplazamos solo dentro de esa línea
+                    return line.replace(regex, "");
+                });
+                
+                // Volvemos a unir el texto con los saltos de línea originales
+                processedContent = processedLines.join('\n');
 
                 // Mostramos el resultado en el textarea
                 outputArea.value = processedContent;
@@ -140,7 +147,6 @@
             };
 
             // Leemos el archivo como texto, especificando UTF-8
-            // Es crucial usar UTF-8 para que lea las tildes correctamente.
             reader.readAsText(file, 'UTF-8');
         });
 
