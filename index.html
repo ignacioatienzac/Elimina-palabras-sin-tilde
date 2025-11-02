@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eliminar Palabras con Tilde/Diéresis</title>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            color: #1a73e8;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 0.5rem;
+            text-align: center;
+        }
+        p {
+            line-height: 1.6;
+        }
+        input[type="file"] {
+            border: 2px dashed #ccc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box; /* Para que el padding no afecte al ancho */
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        input[type="file"]:hover {
+            border-color: #1a73e8;
+            background-color: #fdfdfd;
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box; /* Importante para el layout */
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            background-color: #fafafa;
+        }
+        button {
+            display: none; /* Oculto por defecto */
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .results-header {
+            display: none; /* Oculto por defecto */
+            margin-top: 2rem;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Eliminador de Palabras con Tilde o Diéresis</h1>
+        <p>Sube un archivo <code>.txt</code>. El sistema leerá el contenido, eliminará todas las palabras que contengan tilde (á, é, í, ó, ú) o diéresis (ü) y te mostrará el resultado. <strong>Las palabras con "ñ" no se eliminarán.</strong></p>
+
+        <input type="file" id="fileInput" accept=".txt">
+
+        <h2 classid="results-header" id="resultsHeader">Resultado:</h2>
+        <textarea id="outputArea" rows="20" readonly placeholder="El contenido del archivo procesado aparecerá aquí..."></textarea>
+
+        <button id="downloadButton">Descargar Archivo Procesado</button>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const outputArea = document.getElementById('outputArea');
+        const downloadButton = document.getElementById('downloadButton');
+        const resultsHeader = document.getElementById('resultsHeader');
+        
+        let processedContent = ""; // Variable para guardar el texto procesado
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                return; // No se seleccionó ningún archivo
+            }
+
+            const reader = new FileReader();
+
+            // Evento que se dispara cuando el archivo se ha leído
+            reader.onload = (e) => {
+                const content = e.target.result;
+                
+                // --- La Lógica Principal ---
+                // Esta expresión regular (regex) busca palabras que contengan
+                // al menos un carácter con tilde o diéresis.
+                // \p{L} coincide con cualquier letra en cualquier idioma (requiere el flag 'u' de Unicode).
+                // [áéíóúüÁÉÍÓÚÜ] son los caracteres que buscamos (hemos quitado la ñ/Ñ).
+                const regex = /\b[\p{L}]*[áéíóúüÁÉÍÓÚÜ][\p{L}]*\b/gu;
+
+                // Reemplazamos las palabras encontradas por una cadena vacía
+                processedContent = content.replace(regex, "");
+
+                // Mostramos el resultado en el textarea
+                outputArea.value = processedContent;
+
+                // Mostramos el botón de descarga y el título de resultados
+                downloadButton.style.display = 'block';
+                resultsHeader.style.display = 'block';
+            };
+
+            // Leemos el archivo como texto, especificando UTF-8
+            reader.readAsText(file, 'UTF-8');
+        });
+
+        // Evento para el botón de descarga
+        downloadButton.addEventListener('click', () => {
+            if (processedContent) {
+                // Creamos un Blob (Binary Large Object) con el texto
+                const blob = new Blob([processedContent], { type: 'text/plain;charset=utf-8' });
+                
+                // Creamos un enlace (<a>) temporal en memoria
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'documento_procesado.txt'; // Nombre del archivo a descargar
+                
+                // Simulamos un clic en el enlace para iniciar la descarga
+                document.body.appendChild(link); // Necesario para Firefox
+                link.click();
+                
+                // Limpiamos el enlace temporal
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            }
+        });
+    </script>
+
+</body>
+</html>
